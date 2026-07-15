@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB_BMW
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086   # nombre del servicio Docker, no localhost
+    isDefault: true
+    jsonData:
+      version: Flux              # usar Flux query language (InfluxDB 2.x)
+      organization: ${INFLUX_ORG}
+      defaultBucket: ${INFLUX_BUCKET}
+      tlsSkipVerify: true
+    secureJsonData:
+      token: ${INFLUX_TOKEN}
+    editable: true

@@ -22,7 +22,7 @@ from udsoncan.connections import PythonIsoTpConnection
 from udsoncan.client import Client
 from udsoncan import services
 import can
-from config import MODULE_IDS, REQUEST_TIMEOUT, DCAN_BITRATE
+from core.config import MODULE_IDS, REQUEST_TIMEOUT, DCAN_BITRATE
 
 
 # Parámetros ISO-TP recomendados para BMW E87

@@ -3,3 +3,7 @@ python-can>=4.0.0        # Capa CAN (interface serial/USB con K+DCAN)
 pyserial>=3.5            # Comunicación serial directa
 can-isotp>=2.0.0         # Capa de transporte ISO-TP (sobre CAN)
 udsoncan>=1.19.0         # Capa UDS para leer módulos
+
+# Telemetría
+influxdb-client>=1.36.0  # Escritura en InfluxDB 2.x
+python-dotenv>=1.0.0     # Carga variables desde .env

@@ -12,8 +12,8 @@ Uso:
 import time
 import argparse
 import can
-from connection import CANConnection, detect_kdcan_port
-from config import KNOWN_CAN_IDS, SERIAL_PORT
+from core.connection import CANConnection, detect_kdcan_port
+from core.config import KNOWN_CAN_IDS, SERIAL_PORT
 
 
 def sniff(port: str, duration: float = 15.0, only_known: bool = False):

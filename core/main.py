@@ -19,10 +19,10 @@ Antes de usar:
 
 import sys
 import argparse
-from config import SERIAL_PORT, MODULE_IDS
-from connection import CANConnection, detect_kdcan_port
-from sniffer import sniff
-from uds_client import BMWModuleClient
+from core.config import SERIAL_PORT, MODULE_IDS
+from core.connection import CANConnection, detect_kdcan_port
+from core.sniffer import sniff
+from core.uds_client import BMWModuleClient
 
 
 def cmd_sniff(args):

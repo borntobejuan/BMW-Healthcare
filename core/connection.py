@@ -12,7 +12,7 @@ Uso:
 
 import can
 import serial.tools.list_ports
-from config import SERIAL_PORT, DCAN_BITRATE
+from core.config import SERIAL_PORT, DCAN_BITRATE
 
 
 def detect_kdcan_port() -> str | None:
