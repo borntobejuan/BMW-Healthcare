@@ -38,8 +38,8 @@
         }
       },
       "targets": [{
-        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
-        "query": "from(bucket: \"e87\")\n  |> range(start: -10s)\n  |> filter(fn: (r) => r._measurement == \"engine\" and r._field == \"rpm\")\n  |> last()",
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"engine\" and r._field == \"rpm\")\n  |> last()",
         "refId": "A"
       }]
     },
@@ -59,7 +59,7 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "min": 0, "max": 260,
-          "unit": "velocitykmh",
+          "unit": "none",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -71,8 +71,8 @@
         }
       },
       "targets": [{
-        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
-        "query": "from(bucket: \"e87\")\n  |> range(start: -10s)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"speed_kmh\")\n  |> last()",
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"speed_kmh\")\n  |> last()",
         "refId": "A"
       }]
     },
@@ -105,8 +105,8 @@
         }
       },
       "targets": [{
-        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
-        "query": "from(bucket: \"e87\")\n  |> range(start: -10s)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"coolant_temp_c\")\n  |> last()",
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"coolant_temp_c\")\n  |> last()",
         "refId": "A"
       }]
     },
@@ -140,8 +140,8 @@
         }
       },
       "targets": [{
-        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
-        "query": "from(bucket: \"e87\")\n  |> range(start: -10s)\n  |> filter(fn: (r) => r._measurement == \"electrical\" and r._field == \"battery_voltage_v\")\n  |> last()",
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"electrical\" and r._field == \"battery_voltage_v\")\n  |> last()",
         "refId": "A"
       }]
     },
@@ -168,7 +168,7 @@
         }
       },
       "targets": [{
-        "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
         "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"engine\" and r._field == \"rpm\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
         "refId": "A"
       }]
@@ -190,7 +190,7 @@
         "overrides": [
           {
             "matcher": { "id": "byName", "options": "speed_kmh" },
-            "properties": [{ "id": "unit", "value": "velocitykmh" }]
+            "properties": [{ "id": "unit", "value": "none" }]
           },
           {
             "matcher": { "id": "byName", "options": "throttle_pct" },
@@ -203,12 +203,12 @@
       },
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
+          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
           "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"speed_kmh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
+          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
           "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"engine\" and r._field == \"throttle_pct\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
           "refId": "B"
         }
@@ -232,12 +232,12 @@
       },
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
+          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
           "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"coolant_temp_c\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
           "refId": "A"
         },
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
+          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
           "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"oil_temp_c\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
           "refId": "B"
         }
@@ -255,13 +255,13 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "velocitykmh",
+          "unit": "none",
           "custom": { "lineWidth": 1, "fillOpacity": 5, "spanNulls": true }
         }
       },
       "targets": [
         {
-          "datasource": { "type": "influxdb", "uid": "${DS_INFLUXDB_BMW}" },
+          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
           "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"wheel_speeds\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
           "refId": "A"
         }

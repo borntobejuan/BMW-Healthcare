@@ -18,9 +18,8 @@ import threading
 import logging
 from datetime import datetime, timezone
 
-from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import WriteOptions
-from influxdb_client.domain.write_precision import WritePrecision
 
 log = logging.getLogger(__name__)
 
@@ -130,7 +129,7 @@ class InfluxPublisher:
                 p = p.tag(k, v)
             for k, v in frame.get("fields", {}).items():
                 p = p.field(k, v)
-            p = p.time(datetime.now(timezone.utc), WritePrecision.MILLISECONDS)
+            p = p.time(datetime.now(timezone.utc), "ms")
             return p
         except Exception as e:
             log.warning(f"[InfluxDB] Error construyendo Point: {e}")
