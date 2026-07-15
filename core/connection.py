@@ -17,17 +17,19 @@ from core.config import SERIAL_PORT, DCAN_BITRATE
 
 def detect_kdcan_port() -> str | None:
     """
-    Escanea puertos COM y devuelve el del cable K+DCAN (chip FTDI).
-    Útil si no sabes en qué COM está el cable.
+    Scan ports COM and return the K+DCAN connected wire (chip FTDI).
     """
     ports = serial.tools.list_ports.comports()
     for p in ports:
         desc = (p.description or "").upper()
         mfr  = (p.manufacturer or "").upper()
         if "FTDI" in desc or "FTDI" in mfr or "USB SERIAL" in desc:
-            print(f"[+] K+DCAN detectado en: {p.device}  ({p.description})")
+            print(f"[+] K+DCAN detected in: {p.device}  ({p.description})")
             return p.device
-    print("[!] No se detectó cable K+DCAN. Verifica drivers FTDI.")
+        else:
+            print(f"[+] K+DCAN not detected in: {p.device}")
+
+    print("[!] Not detected wire K+DCAN. Check FTDI drivers.")
     return None
 
 

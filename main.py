@@ -32,7 +32,10 @@ from core.uds_client import BMWModuleClient
 
 def cmd_sniff(args):
     port = args.port or detect_kdcan_port() or SERIAL_PORT
-    sniff(port=port, duration=args.duration, only_known=args.known)
+    if port == "COMX":
+        print(f"Not implemented yet for this SERIAL_PORT: {port}")
+    else:
+        sniff(port=port, duration=args.duration, only_known=args.known)
 
 
 def cmd_dtc(args):
