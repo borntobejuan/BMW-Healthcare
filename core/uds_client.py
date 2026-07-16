@@ -34,7 +34,6 @@ ISOTP_PARAMS = {
     "tx_padding":    0x00,    # Padding con 0x00
     "rx_flowcontrol_timeout": 1000,  # ms
     "rx_consecutive_frame_timeout": 1000,
-    "squash_nones": False,
     "max_frame_size": 4095,
 }
 

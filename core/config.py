@@ -10,7 +10,7 @@ El cable K+DCAN se conecta al D-CAN del OBD (500 kbps) que hace de gateway.
 
 # ─── Puerto serie ───────────────────────────────────────────────────────────────
 # Windows: "COM3", "COM9", etc.  |  Linux/Mac: "/dev/ttyUSB0"
-SERIAL_PORT = "COMX"
+SERIAL_PORT = "COM7"
 
 # ─── Velocidades CAN ────────────────────────────────────────────────────────────
 DCAN_BITRATE   = 500_000   # D-CAN / PT-CAN  → 500 kbps

@@ -23,7 +23,7 @@ def detect_kdcan_port() -> str | None:
     for p in ports:
         desc = (p.description or "").upper()
         mfr  = (p.manufacturer or "").upper()
-        if "FTDI" in desc or "FTDI" in mfr or "USB SERIAL" in desc:
+        if "FTDI" in desc or "FTDI" in mfr or "USB SERIAL PORT" in desc:
             print(f"[+] K+DCAN detected in: {p.device}  ({p.description})")
             return p.device
         else:
