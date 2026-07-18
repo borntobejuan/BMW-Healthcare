@@ -1,0 +1,7 @@
+# BMW E87 EDIABAS - dependencias
+# (La comunicación con el coche va vía EdiabasBridge.exe como subproceso;
+#  no hace falta ninguna librería CAN/serial en Python.)
+
+# Telemetría
+influxdb-client>=1.36.0  # Escritura en InfluxDB 2.x
+python-dotenv>=1.0.0     # Carga variables desde .env

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>EdiabasBridge</RootNamespace>
+    <AssemblyName>EdiabasBridge</AssemblyName>
+    <!-- Publicar como single-file facilita que Python solo llame a un .exe -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <!--
+      IMPORTANTE: win-x86 (32 bits), no win-x64. api32.dll es una DLL
+      de 32 bits — un proceso de 64 bits no puede cargarla, exactamente
+      el mismo problema de arquitectura que tuvimos con Python 64-bit.
+    -->
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <!--
+      self-contained=true: empaqueta el runtime de 32 bits junto al exe.
+      El PC puede tener solo el runtime .NET de 64 bits instalado (lo
+      normal hoy en día), así que no confiamos en que exista uno de 32
+      bits ya instalado en el sistema.
+    -->
+    <SelfContained>true</SelfContained>
+  </PropertyGroup>
+
+</Project>

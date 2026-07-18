@@ -2,7 +2,7 @@
   "__inputs": [],
   "__requires": [],
   "annotations": { "list": [] },
-  "description": "BMW E87 120i — Live CAN Bus Telemetry",
+  "description": "BMW E87 120i — Live EDIABAS Telemetry",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -46,42 +46,9 @@
 
     {
       "id": 2,
-      "title": "Velocidad",
-      "type": "gauge",
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "orientation": "auto",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "min": 0, "max": 260,
-          "unit": "none",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green",  "value": 0   },
-              { "color": "yellow", "value": 120 },
-              { "color": "red",    "value": 200 }
-            ]
-          }
-        }
-      },
-      "targets": [{
-        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
-        "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"speed_kmh\")\n  |> last()",
-        "refId": "A"
-      }]
-    },
-
-    {
-      "id": 3,
       "title": "Temperatura Refrigerante",
       "type": "gauge",
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "orientation": "auto",
@@ -107,6 +74,39 @@
       "targets": [{
         "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
         "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"coolant_temp_c\")\n  |> last()",
+        "refId": "A"
+      }]
+    },
+
+    {
+      "id": 3,
+      "title": "Temperatura Aire Admisión",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 0 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "min": -20, "max": 80,
+          "unit": "celsius",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue",  "value": -20 },
+              { "color": "green", "value": 10  },
+              { "color": "red",   "value": 50  }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -30s)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"intake_air_temp_c\")\n  |> last()",
         "refId": "A"
       }]
     },
@@ -160,11 +160,7 @@
           "color": { "mode": "palette-classic" },
           "unit": "rpm",
           "min": 0,
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "spanNulls": true
-          }
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "spanNulls": true }
         }
       },
       "targets": [{
@@ -176,50 +172,9 @@
 
     {
       "id": 6,
-      "title": "Velocidad + Acelerador — Histórico",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "options": {
-        "tooltip": { "mode": "multi" },
-        "legend": { "displayMode": "list", "placement": "bottom" }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": { "lineWidth": 2, "fillOpacity": 8, "spanNulls": true }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "speed_kmh" },
-            "properties": [{ "id": "unit", "value": "none" }]
-          },
-          {
-            "matcher": { "id": "byName", "options": "throttle_pct" },
-            "properties": [
-              { "id": "unit", "value": "percent" },
-              { "id": "custom.axisPlacement", "value": "right" }
-            ]
-          }
-        ]
-      },
-      "targets": [
-        {
-          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
-          "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"speed_kmh\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
-          "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"engine\" and r._field == \"throttle_pct\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
-          "refId": "B"
-        }
-      ]
-    },
-
-    {
-      "id": 7,
       "title": "Temperaturas — Histórico",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "options": {
         "tooltip": { "mode": "multi" },
         "legend": { "displayMode": "list", "placement": "bottom" }
@@ -238,45 +193,68 @@
         },
         {
           "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
-          "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"oil_temp_c\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+          "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"temperatures\" and r._field == \"intake_air_temp_c\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
           "refId": "B"
         }
       ]
     },
 
     {
-      "id": 8,
-      "title": "Velocidades de Rueda",
+      "id": 7,
+      "title": "Voltaje Batería — Histórico",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
       "options": {
-        "tooltip": { "mode": "multi" },
+        "tooltip": { "mode": "single" },
         "legend": { "displayMode": "list", "placement": "bottom" }
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
-          "custom": { "lineWidth": 1, "fillOpacity": 5, "spanNulls": true }
+          "unit": "volt",
+          "custom": { "lineWidth": 2, "fillOpacity": 8, "spanNulls": true }
         }
       },
-      "targets": [
-        {
-          "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
-          "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"wheel_speeds\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
-          "refId": "A"
+      "targets": [{
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"electrical\" and r._field == \"battery_voltage_v\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)",
+        "refId": "A"
+      }]
+    },
+
+    {
+      "id": 8,
+      "title": "Kilometraje",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lengthkm",
+          "decimals": 1
         }
-      ]
+      },
+      "targets": [{
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"odometer_km\")\n  |> last()",
+        "refId": "A"
+      }]
     }
 
   ],
 
   "refresh": "1s",
   "schemaVersion": 38,
-  "tags": ["bmw", "e87", "can"],
+  "tags": ["bmw", "e87", "ediabas"],
   "time": { "from": "now-5m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "BMW E87 120i — Live Telemetry",
+  "title": "BMW E87 120i — Live EDIABAS Telemetry",
   "uid": "bmw-e87-live",
   "version": 1
 }

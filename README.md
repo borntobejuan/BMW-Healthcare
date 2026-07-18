@@ -1,61 +1,105 @@
-# BMW E87 120i — CAN Bus Diagnostic Tool
+# BMW E87 120i — EDIABAS Diagnostic & Telemetry Tool
 
-Setup mínimo en Python para leer módulos del BMW E87 a través del cable K+DCAN USB.
+Lectura de módulos BMW vía EDIABAS (la misma tecnología que usa INPA),
+con telemetría en vivo hacia InfluxDB + Grafana.
 
 ---
 
-## Requisitos de hardware
+## Arquitectura
 
-- Cable **K+DCAN USB** con chip **FTDI** (genuino, no clon CH340)
-- Switch del cable en posición **D-CAN** (no K-LINE)
-- BMW E87 con **contacto en posición II** (sin arrancar)
+```
+[Cable K+DCAN USB]
+        │
+   api32.dll (EDIABAS, original BMW)
+        │
+   apiNET32.dll (wrapper .NET oficial)
+        │
+   EdiabasBridge.exe  ← app .NET, evita crashes de ctypes puro
+        │
+   subprocess + JSON
+        │
+   core/ediabas_bridge_client.py  (Python)
+        │
+   ┌────┴────┐
+   │         │
+ main.py   telemetry/poller.py
+ (dtc/info)     │
+             InfluxPublisher → InfluxDB → Grafana
+```
+
+`api32.dll` es la DLL original de BMW y necesita convenciones de
+llamada específicas que `ctypes` puro no resuelve de forma fiable.
+`EdiabasBridge.exe` es una pequeña app .NET que sí puede llamarla
+(vía el wrapper oficial `apiNET32.dll`) y expone el resultado como
+JSON simple por stdout — Python solo lanza el proceso y lee la salida.
+
+---
+
+## Requisitos
+
+- Cable K+DCAN USB (genérico, chip FTDI) — confirmado funcional
+- EDIABAS/INPA instalado en `C:\EDIABAS\`
+- SDK de .NET (`dotnet --list-sdks` debe mostrar algo)
+- Python 3.12 de 32 bits *o* 64 bits (el bridge C# resuelve la
+  arquitectura de `api32.dll`; Python no necesita ser 32 bits)
+- Docker Desktop (para InfluxDB + Grafana)
 
 ---
 
 ## Instalación
 
-```bash
-# 1. Instalar dependencias
+```powershell
+# 1. Dependencias Python
 pip install -r requirements.txt
 
-# 2. Instalar drivers FTDI (solo primera vez)
-# → https://ftdichip.com/drivers/vcp-drivers/
-# → Device Manager → Puerto COM → Propiedades:
-#     · COM port: COM3 (o COM9, máximo COM9)
-#     · Latency Timer: 1 ms  ← MUY IMPORTANTE
+# 2. Compilar el puente EDIABAS (una sola vez)
+cd ediabas_bridge
+dotnet publish -c Release -r win-x86 --self-contained true
+cd ..
 
-# 3. Ajustar el puerto en core/config.py
-SERIAL_PORT = "COM3"   # Windows
-# SERIAL_PORT = "/dev/ttyUSB0"  # Linux
+# 3. Levantar InfluxDB + Grafana
+cd infra
+docker compose up -d
+cd ..
 ```
 
 ---
 
 ## Uso
 
-### Paso 1 — Verificar que el cable recibe tráfico
-```bash
-python main.py sniff
-python main.py sniff --duration 30 --known   # solo IDs conocidos del E87
-```
-Si ves tramas CAN en pantalla, el cable funciona ✓
+### Explorar módulos y jobs (sin conocer nombres de antemano)
 
-### Paso 2 — Leer DTCs del motor (DME)
-```bash
+```powershell
+# Listar jobs reales de un .PRG/.GRP (no requiere coche)
+C:\EDIABAS\Bin\bestinfo.exe C:\EDIABAS\ECU\d71n47a0.prg
+
+# Ejecutar un job y ver resultados (requiere coche + contacto puesto)
+python explore_ediabas.py d71n47a0 IDENT
+python explore_ediabas.py d71n47a0 STATUS_MOTORDREHZAHL
+```
+
+### Leer DTCs e info de un módulo
+
+```powershell
 python main.py dtc DME
-python main.py dtc DSC
-python main.py dtc ABS
-```
-
-### Paso 3 — Leer info de la ECU
-```bash
 python main.py info DME
-python main.py info KOMBI
 ```
 
-### Paso 4 — Leer VIN
-```bash
-python main.py vin
+### Telemetría en vivo → InfluxDB → Grafana
+
+```powershell
+python main.py live
+python main.py live --interval 2.0   # cada 2s en vez de 1s
+```
+
+Grafana en `http://localhost:3000` (admin/admin) — dashboard
+"BMW E87 120i — Live EDIABAS Telemetry" cargado automáticamente.
+
+### Simular sin coche (para probar el dashboard)
+
+```powershell
+python simulate.py
+python simulate.py --scenario highway
 ```
 
 ---
@@ -64,49 +108,53 @@ python main.py vin
 
 ```
 bmw_e87_can/
-├── main.py               # Punto de entrada CLI
+├── main.py                    # CLI: dtc, info, live
+├── explore_ediabas.py         # Herramienta de introspección
+├── simulate.py                # Simulador (mismo formato que el poller real)
 ├── requirements.txt
-└── core/
-    ├── config.py         # Parámetros CAN, IDs de módulos
-    ├── connection.py     # Conexión python-can con K+DCAN
-    ├── sniffer.py        # Escucha tráfico raw del bus
-    └── uds_client.py     # Cliente UDS (leer DTCs, DIDs, VIN)
+│
+├── core/
+│   ├── ediabas_config.py      # Rutas, módulos, jobs, catálogo de métricas
+│   └── ediabas_bridge_client.py  # Cliente Python del puente C#
+│
+├── ediabas_bridge/            # Puente C# (.NET) — habla con api32.dll
+│   ├── Program.cs
+│   ├── EdiabasBridge.csproj
+│   └── README.md
+│
+├── telemetry/
+│   ├── publisher.py           # Escritura batch en InfluxDB
+│   └── poller.py              # Polling periódico de métricas EDIABAS
+│
+└── infra/
+    ├── docker-compose.yml     # InfluxDB + Grafana
+    └── grafana/                # Dashboards y datasources provisionados
 ```
 
 ---
 
-## Stack de protocolos
+## Módulos confirmados
 
-```
-[Cable K+DCAN USB]
-       │
-  [pyserial / python-can]   ← CAN físico a 500 kbps
-       │
-  [can-isotp]               ← Fragmentación ISO-TP (ISO 15765-2)
-       │
-  [udsoncan]                ← Servicios UDS (ISO 14229)
-       │
-  [Tu código]               ← read_dtcs(), read_vin(), etc.
-```
+| Módulo | Fichero real | Estado |
+|--------|--------------|--------|
+| DME (motor) | `d71n47a0.prg` | ✅ N46/MEV9 — 208 jobs catalogados |
+| KOMBI | `D_KOMBI.grp` | Wrapper — pendiente `IDENTIFIKATION` con coche |
+| DSC | `D_DSC.grp` | Wrapper — pendiente `IDENTIFIKATION` con coche |
+| CAS | `D_CAS.grp` | Wrapper — pendiente `IDENTIFIKATION` con coche |
 
----
-
-## Buses del E87
-
-| Bus    | Velocidad | Módulos                        |
-|--------|-----------|-------------------------------|
-| D-CAN  | 500 kbps  | OBD port → gateway diagnóstico |
-| PT-CAN | 500 kbps  | DME, EGS, DSC, ABS, CAS       |
-| K-CAN  | 100 kbps  | KOMBI, FRM, luces, puertas     |
+Ver `core/ediabas_config.py` → `ECU_MODULES` y `TELEMETRY_METRICS`
+para el estado exacto de cada job y nombre de campo — algunos
+`result_field` en `TELEMETRY_METRICS` son candidatos aún no
+confirmados contra el coche real (se indica en el propio fichero).
 
 ---
 
 ## Solución de problemas
 
-| Síntoma                        | Causa probable               | Solución                          |
-|-------------------------------|------------------------------|-----------------------------------|
-| No se detecta el cable         | Driver CH340 en vez de FTDI  | Instalar drivers FTDI VCP         |
-| Sin tramas en `sniff`          | Switch en K-LINE             | Cambiar switch a D-CAN            |
-| Sin tramas en `sniff`          | Contacto apagado             | Poner contacto posición II        |
-| Timeout en sesión UDS          | Latency Timer alto           | Poner Latency Timer = 1 ms        |
-| Error "puerto no encontrado"   | COM > 9                      | Reasignar a COM3 en Device Manager|
+| Síntoma | Causa | Solución |
+|---|---|---|
+| `access violation` con ctypes puro | `api32.dll` necesita convención de llamada exacta que ctypes no resuelve bien | Usar siempre el bridge C#, no ctypes directo |
+| Error EDIABAS 13 (IFH-0003) | Cable no conectado al coche o sin contacto | Conectar OBD + contacto posición II |
+| Error EDIABAS 98 (SYS-0008) | Job no existe en ese `.PRG`/`.GRP` | Verificar con `bestinfo.exe` o `_JOBS` |
+| Set de resultados vacío | `result_field` no coincide con el nombre real | Usar `explore_ediabas.py` para descubrir el campo real |
+| `EdiabasBridge.exe` no encontrado | No compilado aún | `dotnet publish` (ver Instalación) |
