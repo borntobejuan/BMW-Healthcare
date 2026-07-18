@@ -44,7 +44,9 @@ class DrivingSimulator:
         self.rpm          = 850.0
         self.speed_kmh    = 0.0
         self.throttle_pct = 0.0
-        self.coolant_c    = 20.0
+        # En el escenario "overheat" partimos con el motor ya caliente
+        # para que la alerta se dispare en ~1 min de prueba, no en 6.
+        self.coolant_c    = 88.0 if scenario == "overheat" else 20.0
         self.intake_air_c = 18.0
         self.voltage_v    = 14.2
         self.odometer_km  = 187_432.0   # kilometraje inicial de ejemplo
@@ -96,10 +98,19 @@ class DrivingSimulator:
         alpha_rpm  = 1 - math.exp(-dt / 0.5)
         self.rpm  += alpha_rpm * (target_rpm - self.rpm)
 
-        target_coolant = 90.0 if self.rpm > 900 else 85.0
-        warmup_rate    = 0.05 * dt if self.coolant_c < target_coolant else -0.01 * dt
-        self.coolant_c = min(target_coolant + 5, self.coolant_c + warmup_rate * (target_coolant - self.coolant_c + 1))
-        self.coolant_c += random.gauss(0, 0.05)
+        if self.scenario == "overheat":
+            # Escenario de prueba de alertas: conduce normal pero el
+            # refrigerante sube sin control (simula termostato pegado
+            # cerrado / bomba fallando). A los ~2 min supera los 105°C
+            # y la regla "coolant_overheat" del analyzer debe dispararse.
+            target_coolant = 120.0
+            self.coolant_c += 0.25 * dt + random.gauss(0, 0.05)
+            self.coolant_c = min(target_coolant, self.coolant_c)
+        else:
+            target_coolant = 90.0 if self.rpm > 900 else 85.0
+            warmup_rate    = 0.05 * dt if self.coolant_c < target_coolant else -0.01 * dt
+            self.coolant_c = min(target_coolant + 5, self.coolant_c + warmup_rate * (target_coolant - self.coolant_c + 1))
+            self.coolant_c += random.gauss(0, 0.05)
 
         target_intake = 25.0 + (self.speed_kmh * 0.02)
         self.intake_air_c += 0.05 * dt * (target_intake - self.intake_air_c)
@@ -178,7 +189,12 @@ def run_simulation(
 
     deadline  = (time.time() + duration) if duration > 0 else None
     published = 0
+    alerts    = 0
     t_start   = time.time()
+
+    from core.ediabas_config import ANALYZER_RULES
+    from telemetry.analyzer import MetricAnalyzer
+    analyzer = MetricAnalyzer(rules=ANALYZER_RULES)
 
     with InfluxPublisher() as publisher:
         print("[+] Conectado a InfluxDB. Publicando...\n")
@@ -188,8 +204,14 @@ def run_simulation(
 
             loop_start = time.time()
             for frame in sim.tick(dt=interval):
-                publisher.publish(frame)
-                published += 1
+                # Mismo pipeline que el poller real: crudo + derivados + alertas
+                for out_frame in analyzer.process(frame):
+                    publisher.publish(out_frame)
+                    published += 1
+                    if out_frame["measurement"] == "alerts":
+                        alerts += 1
+                        state = "ACTIVADA" if out_frame["fields"]["active"] else "RECUPERADA"
+                        print(f"  ⚠ [{state}] {out_frame['tags']['rule']}: {out_frame['fields']['message']}")
 
             elapsed = time.time() - t_start
             if int(elapsed) % 10 == 0 and elapsed > 1:
@@ -205,17 +227,19 @@ def run_simulation(
             if sleep_time > 0:
                 stop.wait(timeout=sleep_time)
 
+    analyzer.save_state()
     elapsed = time.time() - t_start
     print(f"\n{'─'*55}")
     print(f"  Simulación finalizada")
     print(f"  Duración:          {elapsed:.1f}s")
     print(f"  Puntos publicados: {published}")
+    print(f"  Alertas emitidas:  {alerts}")
     print(f"{'─'*55}\n")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="BMW E87 — Simulador de telemetría (modo EDIABAS)")
-    parser.add_argument("--scenario", default="city", choices=["city", "highway", "idle"])
+    parser.add_argument("--scenario", default="city", choices=["city", "highway", "idle", "overheat"])
     parser.add_argument("--duration", default=0.0, type=float, help="Segundos a simular (0=infinito)")
     parser.add_argument("--interval", default=1.0, type=float, help="Segundos entre lecturas (default: 1.0, como el poller real)")
     args = parser.parse_args()

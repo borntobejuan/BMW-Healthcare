@@ -225,7 +225,7 @@
       "id": 8,
       "title": "Kilometraje",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 16 },
       "options": {
         "reduceOptions": { "calcs": ["lastNotNull"] },
         "orientation": "auto",
@@ -242,6 +242,42 @@
       "targets": [{
         "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
         "query": "from(bucket: \"e87\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"vehicle\" and r._field == \"odometer_km\")\n  |> last()",
+        "refId": "A"
+      }]
+    },
+
+    {
+      "id": 9,
+      "title": "⚠ Alertas activas",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 16 },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "none",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "OK", "color": "green" } } },
+            { "type": "value", "options": { "1": { "text": "ACTIVA", "color": "red" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red",   "value": 1 }
+            ]
+          }
+        }
+      },
+      "targets": [{
+        "datasource": { "type": "influxdb", "uid": "P1B275B51259D9601" },
+        "query": "from(bucket: \"e87\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"alerts\" and r._field == \"active\")\n  |> group(columns: [\"rule\"])\n  |> last()",
         "refId": "A"
       }]
     }

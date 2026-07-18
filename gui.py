@@ -109,7 +109,7 @@ class SimulatorTab(BaseTab):
         self.scenario_var = tk.StringVar(value="city")
         ttk.Combobox(
             row, textvariable=self.scenario_var,
-            values=["city", "highway", "idle"], width=12, state="readonly",
+            values=["city", "highway", "idle", "overheat"], width=12, state="readonly",
         ).pack(side="left", padx=(6, 20))
 
         ttk.Label(row, text="Intervalo (s):").pack(side="left")

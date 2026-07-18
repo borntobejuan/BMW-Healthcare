@@ -114,3 +114,79 @@ TELEMETRY_METRICS = [
         "cast":          float,
     },
 ]
+
+# ─── Reglas del analizador (telemetry/analyzer.py) ──────────────────────────────
+# Umbrales con histéresis: la condición debe sostenerse "sustain_s"
+# segundos para disparar la alerta y "recover_s" para recuperarse.
+# Las alertas se publican en el measurement "alerts" de InfluxDB.
+#
+# Valores pensados para el N46 del E87 120i — ajústalos con la
+# experiencia real de tu coche.
+ANALYZER_RULES = [
+    {
+        "id":          "coolant_overheat",
+        "measurement": "temperatures",
+        "field":       "coolant_temp_c",
+        "condition":   "above",
+        "value":       105.0,
+        "sustain_s":   10,
+        "recover_s":   20,
+        "severity":    "critical",
+        "message":     "Temperatura de refrigerante alta sostenida (>105°C)",
+    },
+    {
+        "id":          "coolant_warm_slow",
+        "measurement": "temperatures",
+        "field":       "coolant_temp_c",
+        "condition":   "below",
+        "value":       70.0,
+        "sustain_s":   900,          # 15 min sin llegar a 70°C → termostato sospechoso
+        "recover_s":   30,
+        "severity":    "warning",
+        "message":     "El motor tarda demasiado en alcanzar temperatura de servicio (posible termostato)",
+    },
+    {
+        "id":          "battery_low_running",
+        "measurement": "electrical",
+        "field":       "battery_voltage_v",
+        "condition":   "below",
+        "value":       13.0,
+        "sustain_s":   30,
+        "recover_s":   15,
+        "severity":    "warning",
+        "message":     "Voltaje bajo con motor en marcha (revisar alternador/correa)",
+    },
+    {
+        "id":          "battery_critical",
+        "measurement": "electrical",
+        "field":       "battery_voltage_v",
+        "condition":   "below",
+        "value":       11.8,
+        "sustain_s":   10,
+        "recover_s":   15,
+        "severity":    "critical",
+        "message":     "Voltaje de batería crítico (<11.8V)",
+    },
+    {
+        "id":          "rpm_redline",
+        "measurement": "engine",
+        "field":       "rpm",
+        "condition":   "above",
+        "value":       6500.0,
+        "sustain_s":   3,
+        "recover_s":   5,
+        "severity":    "warning",
+        "message":     "RPM sostenidas en zona roja",
+    },
+    {
+        "id":          "intake_air_hot",
+        "measurement": "temperatures",
+        "field":       "intake_air_temp_c",
+        "condition":   "above",
+        "value":       55.0,
+        "sustain_s":   60,
+        "recover_s":   30,
+        "severity":    "warning",
+        "message":     "Temperatura de admisión alta sostenida (pérdida de rendimiento)",
+    },
+]

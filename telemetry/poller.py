@@ -31,15 +31,16 @@ import logging
 import threading
 
 from core.ediabas_bridge_client import EdiabasBridgeClient, EdiabasBridgeError, EdiabasBridgeCancelled
-from core.ediabas_config import ECU_MODULES, TELEMETRY_METRICS
+from core.ediabas_config import ECU_MODULES, TELEMETRY_METRICS, ANALYZER_RULES
 from telemetry.publisher import InfluxPublisher
+from telemetry.analyzer import MetricAnalyzer
 
 log = logging.getLogger(__name__)
 
 
 class EdiabasPoller:
     """
-    Orquesta el polling periódico de métricas EDIABAS → InfluxDB.
+    Orquesta el polling periódico de métricas EDIABAS → analyzer → InfluxDB.
 
     Uso:
         poller = EdiabasPoller(interval=1.0)
@@ -49,8 +50,9 @@ class EdiabasPoller:
     def __init__(self, interval: float = 1.0):
         self.interval = interval
         self.client = EdiabasBridgeClient()
+        self.analyzer = MetricAnalyzer(rules=ANALYZER_RULES)
         self._stop = threading.Event()
-        self._stats = {"polled": 0, "published": 0, "errors": 0}
+        self._stats = {"polled": 0, "published": 0, "errors": 0, "alerts": 0}
 
     def run(self, duration: float = 0.0, use_signal: bool = True):
         """
@@ -91,6 +93,7 @@ class EdiabasPoller:
                 if sleep_time > 0:
                     self._stop.wait(timeout=sleep_time)
 
+        self.analyzer.save_state()
         self._print_final_stats()
 
     def stop(self):
@@ -127,8 +130,12 @@ class EdiabasPoller:
                     "tags":        {"module": metric["ecu"]},
                     "fields":      {metric["field"]: value},
                 }
-                publisher.publish(frame)
-                self._stats["published"] += 1
+                # El analyzer devuelve el frame original + derivados + alertas
+                for out_frame in self.analyzer.process(frame):
+                    publisher.publish(out_frame)
+                    self._stats["published"] += 1
+                    if out_frame["measurement"] == "alerts":
+                        self._stats["alerts"] += 1
 
             except EdiabasBridgeCancelled:
                 return
@@ -154,6 +161,7 @@ class EdiabasPoller:
         print(f"  Resumen sesión")
         print(f"  Consultas realizadas: {s['polled']}")
         print(f"  Puntos publicados:    {s['published']}")
+        print(f"  Alertas emitidas:     {s['alerts']}")
         print(f"  Errores:              {s['errors']}")
         print(f"{'─'*55}\n")
 
